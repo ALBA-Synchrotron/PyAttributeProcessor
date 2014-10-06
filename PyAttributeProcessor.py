@@ -2,7 +2,7 @@
 
 #############################################################################
 ##
-## file :    header.py
+## file :    PyAttributeProcessor.py
 ##
 ## description : Device Server that processes attributes.
 ##               Python source for the PyAttributeProcessor and its commands. 
@@ -14,8 +14,7 @@
 ##
 ## project :    Tango-ds
 ##
-## developers history: cpascual@cells.es
-##                     (based on  PySignalSimulator by srubio)
+## developers history: srubio@cells.es, cpascual@cells.es
 ##
 ## $Revision:  $
 ##
@@ -44,15 +43,31 @@
 ###########################################################################
 
 
-import sys
+import sys,traceback,math,random,time,imp
+from re import match,search,findall
+import numpy,scipy
+
 from scipy import *
 from scipy.signal import *
 from scipy.optimize import leastsq
 
-import PyTango
+import PyTango,fandango
 from fandango.dynamic import DynamicDS,DynamicDSClass,DynamicAttribute
 from fandango.interface import FullTangoInheritance
+from fandango.threads import wait
 
+try: 
+    import PyTangoArchiving
+    Reader = PyTangoArchiving.Reader()
+except: 
+    PyTangoArchiving = None
+    Reader = None
+
+def get_module_dict(module,ks=None):
+    return dict((k,v) for k,v in module.__dict__.items() if (not ks or k in ks) and not k.startswith('__'))
+
+###############################################################################
+# Signal Processing methods, by cpascual@cells.es
 
 def FFT(a, power=True, phase=True, **kwargs):
     """returns full output of the fft of a by concatenating the power
@@ -127,44 +142,81 @@ def PEAKFIT(yexp, x=None, roimin=None, roimax=None, fitfunc=None, Chi2Warning=2,
         
     return DynamicAttribute(value=concatenate(([normChi2],params)),quality=quality)
     
+#==================================================================
+#   PyAttributeProcessor Class Description:
+#   
+#   Device Server that processes attributes. Based on the code of PySignalSimulator by srubio
+#
+#==================================================================
+    
 class PyAttributeProcessor(PyTango.Device_4Impl):
 
-#--------- Add you global variables here --------------------------
-
-#------------------------------------------------------------------
-#    Device constructor
-#------------------------------------------------------------------
+    #--------- Add you global variables here --------------------------
+    LIBS = [math,random,scipy,scipy.signal]
+    NAMES = [math,random,numpy,scipy,time,PyTango,PyTangoArchiving,
+        DynamicAttribute,match,search,findall,wait,leastsq]
+    OTHERS = dict((k,v) for k,v in 
+        [('fandango',fandango.functional),('archiving',Reader),('np',numpy)]+
+        [(f,getattr(fandango,f)) for f in dir(fandango.functional) if '2' in f or f.startswith('to')]
+        )
+    
+    #------------------------------------------------------------------
+    #    Device constructor
+    #------------------------------------------------------------------
     def __init__(self,cl, name):
         #PyTango.Device_4Impl.__init__(self,cl,name)
         print 'IN PYATTRIBUTEPROCESSOR.__INIT__'
         _locals = {}
-        _locals.update(locals())
-        _locals.update(globals())
+        [_locals.update(get_module_dict(m)) for m in self.LIBS]
+        _locals.update((k.__name__,k) for k in self.NAMES)
+        _locals.update(self.OTHERS)
         #print '_locals are:\n%s' % _locals
         DynamicDS.__init__(self,cl,name,_locals=_locals,useDynStates=True)
         PyAttributeProcessor.init_device(self)
 
-#------------------------------------------------------------------
-#    Device destructor
-#------------------------------------------------------------------
+    #------------------------------------------------------------------
+    #    Device destructor
+    #------------------------------------------------------------------
     def delete_device(self):
         print "[Device delete_device method] for device",self.get_name()
 
-
-#------------------------------------------------------------------
-#    Device initialization
-#------------------------------------------------------------------
+    #------------------------------------------------------------------
+    #    Device initialization
+    #------------------------------------------------------------------
     def init_device(self):
         print "In ", self.get_name(), "::init_device()"
+        try: 
+            DynamicDS.init_device(self) #New in Fandango 11.1
+        except:
+            self.get_DynDS_properties() #LogLevel is already set here
+        try:[sys.path.insert(0,p) for p in self.PYTHONPATH if p not in sys.path]
+        except: traceback.print_exc()
+        for m in self.ExtraModules:
+            try: 
+                m,k = m.split(' as ') if (' as ' in m) else (m,'')
+                m = m.strip().split('.')
+                if not m: continue
+                k = k or m[-1]
+                if k in self._locals: continue
+                if m[0] in ('sys','os'): 
+                    raise Exception('%s not allowed'%str(m))
+                print '%s.init_device(): loading %s as %s' % (self.get_name(),m,k)
+                l = imp.load_module(m[0],*imp.find_module(m[0]))
+                if len(m)==1:
+                    self._locals[k or m[0]] = l
+                elif m[1]=='*':
+                    self._locals.update(get_module_dict(l))
+                else:
+                    self._locals[k or m[1]] = l.__dict__[m[1]]
+            except: traceback.print_exc()
         self.set_state(PyTango.DevState.ON)
-        self.get_device_properties(self.get_device_class())
-        if self.DynamicStates: self.set_state(PyTango.DevState.UNKNOWN)
+        print "Out of ", self.get_name(), "::init_device()"
 
-#------------------------------------------------------------------
-#    Always excuted hook method
-#------------------------------------------------------------------
+    #------------------------------------------------------------------
+    #    Always excuted hook method
+    #------------------------------------------------------------------
     def always_executed_hook(self):
-        print "In ", self.get_name(), "::always_excuted_hook()"
+        #print "In ", self.get_name(), "::always_excuted_hook()"
         DynamicDS.always_executed_hook(self)
 
 #==================================================================
@@ -176,10 +228,8 @@ class PyAttributeProcessor(PyTango.Device_4Impl):
 #    Read Attribute Hardware
 #------------------------------------------------------------------
     def read_attr_hardware(self,data):
-        print "In ", self.get_name(), "::read_attr_hardware()"
-    
-            
-
+        #print "In ", self.get_name(), "::read_attr_hardware()"
+        pass
 
 #==================================================================
 #
@@ -201,6 +251,14 @@ class PyAttributeProcessorClass(PyTango.DeviceClass):
 
     #    Device Properties
     device_property_list = {
+        'ExtraModules':
+            [PyTango.DevVarStringArray,
+            "Extra modules to be available for attribute evaluation.",
+            [ "PyTangoArchiving.Reader as HDB",] ],
+        'PYTHONPATH':
+            [PyTango.DevVarStringArray,
+            "Extra folders to add in pythonpath.",
+            [ ] ],
         'DynamicAttributes':
             [PyTango.DevVarStringArray,
             "Attributes and formulas to create for this device.\n<br/>\nThis Tango Attributes will be generated dynamically using this syntax:\n<br/>\nT3=int(SomeCommand(7007)/10.)\n\n<br/>\nSee the class description to know how to make any method available in attributes declaration.",
@@ -238,11 +296,9 @@ class PyAttributeProcessorClass(PyTango.DeviceClass):
 if __name__ == '__main__':
     try:
         py = PyTango.Util(sys.argv)
-        # Adding TRUE DeviceServer Inheritance
-        from fandango.interface import FullTangoInheritance
+        # Adding all commands/properties from fandango.DynamicDS
         PyAttributeProcessor,PyAttributeProcessorClass = FullTangoInheritance('PyAttributeProcessor',PyAttributeProcessor,PyAttributeProcessorClass,DynamicDS,DynamicDSClass,ForceDevImpl=True)
         py.add_TgClass(PyAttributeProcessorClass,PyAttributeProcessor,'PyAttributeProcessor')
-
         U = PyTango.Util.instance()
         U.server_init()
         U.server_run()
@@ -251,3 +307,8 @@ if __name__ == '__main__':
         print '-------> Received a DevFailed exception:',e
     except Exception,e:
         print '-------> An unforeseen exception occured....',e
+        
+else:
+    #Enabling subclassing
+    PyAttributeProcessor,PyAttributeProcessorClass = FullTangoInheritance('PyAttributeProcessor',PyAttributeProcessor,PyAttributeProcessorClass,DynamicDS,DynamicDSClass,ForceDevImpl=True)
+
