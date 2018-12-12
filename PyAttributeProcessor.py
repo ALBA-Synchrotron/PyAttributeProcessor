@@ -300,6 +300,7 @@ if __name__ == '__main__':
         PyAttributeProcessor,PyAttributeProcessorClass = FullTangoInheritance('PyAttributeProcessor',PyAttributeProcessor,PyAttributeProcessorClass,DynamicDS,DynamicDSClass,ForceDevImpl=True)
         py.add_TgClass(PyAttributeProcessorClass,PyAttributeProcessor,'PyAttributeProcessor')
         U = PyTango.Util.instance()
+        fandango.dynamic.CreateDynamicCommands(PyAttributeProcessor,PyAttributeProcessorClass)
         U.server_init()
         U.server_run()
 
