@@ -1,11 +1,22 @@
 PyAttributeProcessor by srubio@cells.es,cpascual@cells.es
 
-This class inherits from fandango.DynamicDS, it is based on PySignalSimulator but providing extra functionality 
-like FFT, GaussPeak, PeakFit, all numpy and scipy methods and properties to load extra libraries on demand.
+This class inherits from fandango.DynamicDS, but providing extra libraries and functions:
 
 https://github.com/tango-controls/fandango/blob/documentation/doc/recipes/DynamicDS_and_Simulators.rst
 
-Modules on ExtraModules property are just added like::
+Extra functions/modules available are:
+
+ - FFT
+ - GaussPeak 
+ - PeakFit 
+ - math
+ - time
+ - random
+ - numpy.*
+ - scipy.*
+ - scipy.signal.*
+ 
+Other Modules can be loaded using ExtraModules property::
 
   PyTangoArchiving
   PyTangoArchiving.Reader as HDB
