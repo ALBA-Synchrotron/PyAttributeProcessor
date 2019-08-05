@@ -5,9 +5,9 @@ like FFT, GaussPeak, PeakFit, all numpy and scipy methods and properties to load
 
 https://github.com/tango-controls/fandango/blob/documentation/doc/recipes/DynamicDS_and_Simulators.rst
 
-Modules on ExtraModules property are added like::
+Modules on ExtraModules property are just added like::
 
-  PyTango
+  PyTangoArchiving
   PyTangoArchiving.Reader as HDB
 
 So you can use them in DynamicAttributes declaration::
