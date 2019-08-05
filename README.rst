@@ -12,7 +12,9 @@ Modules on ExtraModules property are just added like::
 
 So you can use them in DynamicAttributes declaration::
 
-  LastValues = DevVarDoubleArray(t[1] for t in HDB().get_attribute_values("any/attribute/name",-3600))
+  MeanPeriod = DevDouble(VAR('MeanPeriod',VALUE,default=3600)) # An R/W attribute
+  LastValues = DevVarDoubleArray(t[1] for t in HDB().get_attribute_values("my/tango/attribute/name",- MeanPeriod))
+  MeanValue = DevDouble(numpy.average(LastValues))
 
 
 
