@@ -1,7 +1,0 @@
-#!/usr/bin/sh
-
-#screen -dm -S $0-$1 python PyAttributeProcessor.py $*
-python PyAttributeProcessor.py $*
-
-
-

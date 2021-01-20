@@ -1,0 +1,5 @@
+global-exclude *.pyc
+include README.rst LICENSE PyAttributeProcessor/VERSION
+include-recursive doc
+#include bin/PyAttributeProcessor
+

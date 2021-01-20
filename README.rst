@@ -1,5 +1,9 @@
 PyAttributeProcessor by srubio@cells.es,cpascual@cells.es
 
+Development repository for this project is:
+
+https://github.com/alba-synchrotron/pyattributeprocessor
+
 This class inherits from fandango.DynamicDS, but providing extra libraries and functions:
 
 https://github.com/tango-controls/fandango/blob/documentation/doc/recipes/DynamicDS_and_Simulators.rst
