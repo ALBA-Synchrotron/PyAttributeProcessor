@@ -1,0 +1,18 @@
+2.2 
+
+Debian packaging added, changed to DeviceImpl, change launcher
+
+----
+
+Device Server for processing attributes (or generating new ones).
+It is a "PySignalSimulator on Steroids", which incorporates:
+-FFT calculation
+-Gaussian peak fitting
+-Signal Filtering (all functions from scipy.signal)
+-general scipy functions
+Comment on the version src-2.1 :
+
+2.0 - October 2014
+
+Merged with PySignalSimulator code.
+Enabled Init() command and ExtraModules property.

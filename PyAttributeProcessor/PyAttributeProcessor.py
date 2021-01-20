@@ -149,7 +149,7 @@ def PEAKFIT(yexp, x=None, roimin=None, roimax=None, fitfunc=None, Chi2Warning=2,
 #
 #==================================================================
     
-class PyAttributeProcessor(PyTango.Device_4Impl):
+class PyAttributeProcessor(PyTango.DeviceImpl):
 
     #--------- Add you global variables here --------------------------
     LIBS = [math,random,scipy,scipy.signal]
@@ -164,7 +164,7 @@ class PyAttributeProcessor(PyTango.Device_4Impl):
     #    Device constructor
     #------------------------------------------------------------------
     def __init__(self,cl, name):
-        #PyTango.Device_4Impl.__init__(self,cl,name)
+        #PyTango.DeviceImpl.__init__(self,cl,name)
         print 'IN PYATTRIBUTEPROCESSOR.__INIT__'
         _locals = {}
         [_locals.update(get_module_dict(m)) for m in self.LIBS]
