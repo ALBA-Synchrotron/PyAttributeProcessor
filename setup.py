@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 # Always prefer setuptools over distutils
-# setup.py
+
 import sys
-from setuptools import setup
-from setuptools import find_packages
+from setuptools import setup, find_packages
 
 DS = 'PyAttributeProcessor'
 author = 'Sergi Rubio, srubio@cells.es'
-long_description = """
-https://github.com/alba-synchrotron/pyattributeprocessor
-"""
+url = "https://github.com/alba-synchrotron/pyattributeprocessor"
+long_description = url
 
 # If the version is updated automatically with bumpversion
 # do not update manually
 __version = open(DS+'/VERSION').read().strip()
 #if defined raw, it should match with .bumpversion file!
 #__version = '4.5.3'
+
+scripts = ['./bin/'+DS,]
+
 
 __doc__ = """
 Generic Device Server setup.py file copied from fandango/scripts/setup.ds.py
@@ -40,15 +41,11 @@ To tune some options:
   python setup.py egg_info --egg-base=tmp install --root=$RU/files --no-compile \
     --install-lib=lib/python/site-packages --install-scripts=ds
 
--------------------------------------------------------------------------------
-"""
-#print(__doc__) #This print causes error on build!
-
 # windows installer:
 # python setup.py bdist_wininst
 
-# patch distutils if it can't cope with the "classifiers" or
-# "download_url" keywords
+-------------------------------------------------------------------------------
+"""
 
 ## All the following defines are OPTIONAL
 setup_requirements = []
@@ -96,5 +93,5 @@ setup(
     install_requires=['pytango','fandango'],
     #python_requires='>=3.5',
     #package_dir= package_dir,          
-    scripts = ['./bin/'+DS,]
+    scripts = scripts,
 )
